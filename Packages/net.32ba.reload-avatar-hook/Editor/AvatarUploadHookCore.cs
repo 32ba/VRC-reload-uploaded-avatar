@@ -2,10 +2,8 @@ using UnityEditor;
 using UnityEngine;
 using VRC.Core;
 using VRC.SDKBase.Editor;
-using VRC.SDKBase.Editor.Api;
 using System;
 using System.Reflection;
-using System.Linq;
 using System.Threading.Tasks; // Added for Task.Delay
 
 namespace ReloadAvatarHook
@@ -31,56 +29,19 @@ namespace ReloadAvatarHook
                 builder.OnSdkUploadSuccess += OnUploadSuccess;
             }
         }
-        public static void OnUploadSuccess(object sender, string apiAvatarId)
+        public static void OnUploadSuccess(object sender, string message)
         {
-            Debug.Log($"[VRC Reload Avatar Hook] OnUploadSuccessReflected triggered for API Avatar ID: {apiAvatarId}");
+            PipelineManager[] pipelineManagers = VRC.Tools.FindSceneObjectsOfTypeAll<PipelineManager>();
+            var blueprintId = pipelineManagers[0].blueprintId;
 
-            VRC_AvatarDescriptor avatarDescriptor = null;
-
-            // Try getting avatar from reflected _selectedAvatar field
-            if (_selectedAvatarField != null)
+            // if not blueprintId start with avtr_ then it's not an avatar
+            if (!blueprintId.StartsWith("avtr_"))
             {
-                 try
-                 {
-                     avatarDescriptor = _selectedAvatarField.GetValue(null) as VRC_AvatarDescriptor; // Static field
-                     if (avatarDescriptor != null)
-                         Debug.Log($"[VRC Reload Avatar Hook] Found avatar descriptor '{avatarDescriptor.name}' via reflection.");
-                     else
-                          Debug.LogWarning("[VRC Reload Avatar Hook] _selectedAvatar field was null.");
-                 }
-                 catch (Exception e) { Debug.LogError($"[VRC Reload Avatar Hook] Error accessing _selectedAvatar field: {e}"); }
-            }
-
-            // Fallback: Use currently selected GameObject
-            if (avatarDescriptor == null)
-            {
-                 Debug.LogWarning("[VRC Reload Avatar Hook] Falling back to Selection.activeGameObject.");
-                 GameObject selectedObject = Selection.activeGameObject;
-                 if (selectedObject != null)
-                 {
-                     avatarDescriptor = selectedObject.GetComponentInParent<VRC_AvatarDescriptor>(); // Check parents too
-                     if (avatarDescriptor != null)
-                          Debug.Log($"[VRC Reload Avatar Hook] Found avatar descriptor '{avatarDescriptor.name}' via Selection.activeGameObject.");
-                 }
-            }
-
-            if (avatarDescriptor == null)
-            {
-                 Debug.LogError("[VRC Reload Avatar Hook] Could not determine the uploaded avatar. Cannot get Blueprint ID.");
-                 return;
-            }
-
-            // Get PipelineManager to find the blueprint ID
-            PipelineManager pipelineManager = avatarDescriptor.GetComponent<PipelineManager>();
-            if (pipelineManager == null)
-            {
-                Debug.LogError($"[VRC Reload Avatar Hook] PipelineManager not found on avatar '{avatarDescriptor.name}'.");
+                Debug.Log($"[VRC Reload Avatar Hook] Not an avatar, skipping reload sequence.");
                 return;
             }
 
-            string blueprintId = pipelineManager.blueprintId;
             Debug.Log($"[VRC Reload Avatar Hook] Found Blueprint ID: {blueprintId}");
-
             // Start the reload sequence asynchronously
             SendReloadSequenceAsync(blueprintId);
         }
