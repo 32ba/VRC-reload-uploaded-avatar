@@ -37,11 +37,9 @@ namespace ReloadAvatarHook
             // if not blueprintId start with avtr_ then it's not an avatar
             if (!blueprintId.StartsWith("avtr_"))
             {
-                Debug.Log($"[VRC Reload Avatar Hook] Not an avatar, skipping reload sequence.");
+                Debug.Log($"[Reload Avatar Hook] Not an avatar, skipping reload sequence.");
                 return;
             }
-
-            Debug.Log($"[VRC Reload Avatar Hook] Found Blueprint ID: {blueprintId}");
             // Start the reload sequence asynchronously
             SendReloadSequenceAsync(blueprintId);
         }
@@ -50,7 +48,7 @@ namespace ReloadAvatarHook
         {
             if (string.IsNullOrEmpty(finalBlueprintId))
             {
-                Debug.LogWarning("[VRC Reload Avatar Hook] Final Blueprint ID is empty, skipping reload sequence.");
+                Debug.LogWarning("[Reload Avatar Hook] Final Blueprint ID is empty, skipping reload sequence.");
                 return;
             }
 
@@ -58,10 +56,8 @@ namespace ReloadAvatarHook
             string tempAvatarId = ReloadHookSettings.TempAvatarId;
             int reloadDelayMs = ReloadHookSettings.ReloadDelayMs;
 
-            Debug.Log($"[VRC Reload Avatar Hook] Starting reload sequence. Temp ID: {tempAvatarId}, Final ID: {finalBlueprintId}, Delay: {reloadDelayMs}ms");
-
             // 1. Send temporary avatar ID
-            OscSender.SendOscAvatarChangeMessage(tempAvatarId);
+            OscSender.SendOscMessage(ReloadHookSettings.OscIpAddress, ReloadHookSettings.OscPort, "/avatar/change", tempAvatarId);
 
             // 2. Wait for a delay
             try
@@ -73,13 +69,13 @@ namespace ReloadAvatarHook
             }
             catch (Exception e)
             {
-                 Debug.LogError($"[VRC Reload Avatar Hook] Error during delay: {e.Message}");
+                 Debug.LogError($"[Reload Avatar Hook] Error during delay: {e.Message}");
             }
 
             // 3. Send final (uploaded) avatar ID
-            OscSender.SendOscAvatarChangeMessage(finalBlueprintId);
+            OscSender.SendOscMessage(ReloadHookSettings.OscIpAddress, ReloadHookSettings.OscPort, "/avatar/change", finalBlueprintId);
 
-             Debug.Log("[VRC Reload Avatar Hook] Reload sequence completed.");
+             Debug.Log("[Reload Avatar Hook] Reload sequence completed.");
         }
     }
 }

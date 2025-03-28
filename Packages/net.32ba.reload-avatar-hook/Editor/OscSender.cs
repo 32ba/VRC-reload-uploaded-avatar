@@ -1,86 +1,69 @@
-using UnityEngine;
 using System;
 using System.Net;
 using System.Net.Sockets;
 using System.Text;
-using System.Collections.Generic; // For List<byte>
+using UnityEngine;
+using UnityEditor;
 
-namespace ReloadAvatarHook
+public static class OscSender
 {
-    public static class OscSender
+    public static void SendOscMessage(string ip, int port, string address, params object[] values)
     {
-        private const string OSC_ADDRESS = "/avatar/change";
-
-        /// <summary>
-        /// Sends an OSC message with the avatar blueprint ID.
-        /// Reads IP and Port from ReloadHookSettings.
-        /// </summary>
-        /// <param name="blueprintId">The blueprint ID to send.</param>
-        public static void SendOscAvatarChangeMessage(string blueprintId)
+        using (UdpClient udpClient = new UdpClient())
         {
-            if (string.IsNullOrEmpty(blueprintId))
-            {
-                Debug.LogWarning("[VRC Reload Avatar Hook] Blueprint ID is empty, skipping OSC message.");
-                return;
-            }
-
-            Debug.Log($"[VRC Reload Avatar Hook] Sending OSC message for Blueprint ID: {blueprintId}");
-
             try
             {
-                // Get settings dynamically
-                string targetIp = ReloadHookSettings.OscIpAddress;
-                int targetPort = ReloadHookSettings.OscPort;
-
-                using (var udpClient = new UdpClient())
-                {
-                    byte[] messageBytes = FormatOscMessage(OSC_ADDRESS, blueprintId);
-                    udpClient.Send(messageBytes, messageBytes.Length, targetIp, targetPort);
-                    Debug.Log($"[VRC Reload Avatar Hook] OSC message sent to {targetIp}:{targetPort} with ID: {blueprintId}");
-                }
+                IPEndPoint endPoint = new IPEndPoint(IPAddress.Parse(ip), port);
+                byte[] oscMessage = CreateOscMessage(address, values);
+                udpClient.Send(oscMessage, oscMessage.Length, endPoint);
             }
             catch (Exception e)
             {
-                Debug.LogError($"[VRC Reload Avatar Hook] Failed to send OSC message: {e.Message}");
+                Debug.LogError($"[Reload Avatar Hook] OSC Send Error: {e.Message}");
             }
         }
+    }
 
-        private static byte[] FormatOscMessage(string address, string argument)
+    private static byte[] CreateOscMessage(string address, object[] values)
+    {
+        using (System.IO.MemoryStream stream = new System.IO.MemoryStream())
         {
-            List<byte> message = new List<byte>();
-
-            // Address Pattern
-            byte[] addressBytes = Encoding.ASCII.GetBytes(address);
-            message.AddRange(addressBytes);
-            message.Add(0); // Null terminator
-            PadToMultipleOf4(message);
-
-            // Type Tag String
-            byte[] typeTagBytes = Encoding.ASCII.GetBytes(",s");
-            message.AddRange(typeTagBytes);
-            message.Add(0); // Null terminator
-            PadToMultipleOf4(message);
-
-            // String Argument
-            byte[] argumentBytes = Encoding.UTF8.GetBytes(argument);
-            message.AddRange(argumentBytes);
-            message.Add(0); // Null terminator
-            PadToMultipleOf4(message);
-
-            return message.ToArray();
-        }
-
-        private static void PadToMultipleOf4(List<byte> data)
-        {
-            int remainder = data.Count % 4;
-            if (remainder > 0)
+            using (System.IO.BinaryWriter writer = new System.IO.BinaryWriter(stream))
             {
-                int padding = 4 - remainder;
-                for (int i = 0; i < padding; i++)
+                WriteOscString(writer, address);
+
+                // タイプタグ
+                string typeTag = ",";
+                foreach (var value in values)
                 {
-                    data.Add(0);
+                    if (value is int) typeTag += "i";
+                    else if (value is float) typeTag += "f";
+                    else if (value is string) typeTag += "s";
                 }
+                WriteOscString(writer, typeTag);
+
+                // データ部分
+                foreach (var value in values)
+                {
+                    if (value is int intValue) writer.Write(IPAddress.HostToNetworkOrder(intValue));
+                    else if (value is float floatValue)
+                    {
+                        byte[] bytes = BitConverter.GetBytes(floatValue);
+                        if (BitConverter.IsLittleEndian) Array.Reverse(bytes);
+                        writer.Write(bytes);
+                    }
+                    else if (value is string stringValue) WriteOscString(writer, stringValue);
+                }
+
+                return stream.ToArray();
             }
         }
+    }
+
+    private static void WriteOscString(System.IO.BinaryWriter writer, string value)
+    {
+        byte[] bytes = Encoding.UTF8.GetBytes(value);
+        writer.Write(bytes);
+        writer.Write(new byte[4 - (bytes.Length % 4)]); // 4バイト境界調整
     }
 }

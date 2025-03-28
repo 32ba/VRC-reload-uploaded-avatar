@@ -1,6 +1,8 @@
 {
     "name": "ReloadAvatarHook.Editor",
-    "references": [],
+    "references": [
+        "VRC.SDKBase.Editor"
+    ],
     "includePlatforms": [
         "Editor"
     ],

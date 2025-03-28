@@ -15,8 +15,8 @@ namespace ReloadAvatarHook
         // Default Values
         private const string DEFAULT_OSC_IP = "127.0.0.1";
         private const int DEFAULT_OSC_PORT = 9000;
-        private const int DEFAULT_RELOAD_DELAY = 1000; // ms
-        private const string DEFAULT_TEMP_AVATAR_ID = "avtr_712e5c3c-2deb-4cae-a414-79b2a814a90b";
+        private const int DEFAULT_RELOAD_DELAY = 5000; // ms
+        private const string DEFAULT_TEMP_AVATAR_ID = "avtr_c38a1615-5bf5-42b4-84eb-a8b6c37cbd11";
 
         // --- Properties to Access Settings ---
 
@@ -55,7 +55,7 @@ namespace ReloadAvatarHook
             EditorPrefs.DeleteKey(KEY_OSC_PORT);
             EditorPrefs.DeleteKey(KEY_RELOAD_DELAY);
             EditorPrefs.DeleteKey(KEY_TEMP_AVATAR_ID);
-            Debug.Log("[VRC Reload Avatar Hook] Settings reset to defaults.");
+            Debug.Log("[Reload Avatar Hook] Settings reset to defaults.");
         }
     }
 }
