@@ -31,7 +31,7 @@ namespace ReloadAvatarHook
                 builder.OnSdkUploadSuccess += OnUploadSuccess;
             }
         }
-        public static void OnUploadSuccessReflected(object sender, string apiAvatarId)
+        public static void OnUploadSuccess(object sender, string apiAvatarId)
         {
             Debug.Log($"[VRC Reload Avatar Hook] OnUploadSuccessReflected triggered for API Avatar ID: {apiAvatarId}");
 
