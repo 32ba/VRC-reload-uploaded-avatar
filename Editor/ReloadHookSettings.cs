@@ -1,12 +1,12 @@
 using UnityEditor;
 using UnityEngine;
 
-namespace ReloadAvatarHook
+namespace ReloadUploadedAvatar
 {
     public static class ReloadHookSettings
     {
         // EditorPrefs Keys
-        private const string PREFS_PREFIX = "VRC.ReloadAvatarHook.";
+        private const string PREFS_PREFIX = "VRC.ReloadUploadedAvatar.";
         private const string KEY_OSC_IP = PREFS_PREFIX + "OscIpAddress";
         private const string KEY_OSC_PORT = PREFS_PREFIX + "OscPort";
         private const string KEY_RELOAD_DELAY = PREFS_PREFIX + "ReloadDelayMs";
@@ -55,7 +55,7 @@ namespace ReloadAvatarHook
             EditorPrefs.DeleteKey(KEY_OSC_PORT);
             EditorPrefs.DeleteKey(KEY_RELOAD_DELAY);
             EditorPrefs.DeleteKey(KEY_TEMP_AVATAR_ID);
-            Debug.Log("[Reload Avatar Hook] Settings reset to defaults.");
+            Debug.Log("[Reload Uploaded Avatar] Settings reset to defaults.");
         }
     }
 }

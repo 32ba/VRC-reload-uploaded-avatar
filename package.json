@@ -1,7 +1,7 @@
 {
-  "name": "net.32ba.reload-avatar-hook",
-  "displayName": "Reload Avatar Hook",
-  "version": "1.0.0-rc.1",
+  "name": "net.32ba.reload-uploaded-avatar",
+  "displayName": "Reload Uploaded Avatar",
+  "version": "1.0.0",
   "unity": "2022.3",
   "description": "Automatically reloads your VRChat avatar via OSC after uploading from Unity.",
   "vrchatVersion": "2022.1.1",

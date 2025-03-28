@@ -6,7 +6,7 @@ using System;
 using System.Reflection;
 using System.Threading.Tasks; // Added for Task.Delay
 
-namespace ReloadAvatarHook
+namespace ReloadUploadedAvatar
 {
     [InitializeOnLoad]
     public static class AvatarUploadHookCore
@@ -37,7 +37,7 @@ namespace ReloadAvatarHook
             // if not blueprintId start with avtr_ then it's not an avatar
             if (!blueprintId.StartsWith("avtr_"))
             {
-                Debug.Log($"[Reload Avatar Hook] Not an avatar, skipping reload sequence.");
+                Debug.Log($"[Reload Uploaded Avatar] Not an avatar, skipping reload sequence.");
                 return;
             }
             // Start the reload sequence asynchronously
@@ -48,7 +48,7 @@ namespace ReloadAvatarHook
         {
             if (string.IsNullOrEmpty(finalBlueprintId))
             {
-                Debug.LogWarning("[Reload Avatar Hook] Final Blueprint ID is empty, skipping reload sequence.");
+                Debug.LogWarning("[Reload Uploaded Avatar] Final Blueprint ID is empty, skipping reload sequence.");
                 return;
             }
 
@@ -69,13 +69,13 @@ namespace ReloadAvatarHook
             }
             catch (Exception e)
             {
-                 Debug.LogError($"[Reload Avatar Hook] Error during delay: {e.Message}");
+                 Debug.LogError($"[Reload Uploaded Avatar] Error during delay: {e.Message}");
             }
 
             // 3. Send final (uploaded) avatar ID
             OscSender.SendOscMessage(ReloadHookSettings.OscIpAddress, ReloadHookSettings.OscPort, "/avatar/change", finalBlueprintId);
 
-             Debug.Log("[Reload Avatar Hook] Reload sequence completed.");
+             Debug.Log("[Reload Uploaded Avatar] Reload sequence completed.");
         }
     }
 }

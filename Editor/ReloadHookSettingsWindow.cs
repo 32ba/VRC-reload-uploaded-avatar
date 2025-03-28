@@ -1,21 +1,21 @@
 using UnityEditor;
 using UnityEngine;
-using ReloadAvatarHook;
+using ReloadUploadedAvatar;
 
-namespace ReloadAvatarHook
+namespace ReloadUploadedAvatar
 {
-    public class ReloadHookSettingsWindow : EditorWindow
+    public class ReloadUploadedAvatarSettingsWindow : EditorWindow
     {
         private string _oscIpAddress;
         private int _oscPort;
         private int _reloadDelayMs;
         private string _tempAvatarId;
 
-        [MenuItem("Tools/Reload Avatar Hook/Settings")]
+        [MenuItem("Tools/Reload Uploaded Avatar/Settings")]
         public static void ShowWindow()
         {
             // Get existing open window or if none, make a new one:
-            ReloadHookSettingsWindow window = GetWindow<ReloadHookSettingsWindow>("Reload Hook Settings");
+            ReloadUploadedAvatarSettingsWindow  window = GetWindow<ReloadUploadedAvatarSettingsWindow >("Reload Uploaded Avatar Settings");
             window.minSize = new Vector2(350, 200); // Set a minimum size for better layout
             window.Show();
         }
@@ -36,7 +36,7 @@ namespace ReloadAvatarHook
 
         private void OnGUI()
         {
-            GUILayout.Label("VRC Reload Avatar Hook Settings", EditorStyles.boldLabel);
+            GUILayout.Label("VRC Reload Uploaded Avatar Settings", EditorStyles.boldLabel);
             EditorGUILayout.Space();
 
             EditorGUILayout.LabelField("OSC Target", EditorStyles.boldLabel);

@@ -1,5 +1,5 @@
 {
-    "name": "ReloadAvatarHook.Editor",
+    "name": "ReloadUploadedAvatar.Editor",
     "references": [
         "VRC.SDKBase.Editor"
     ],

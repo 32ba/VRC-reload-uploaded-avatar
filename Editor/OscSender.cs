@@ -19,7 +19,7 @@ public static class OscSender
             }
             catch (Exception e)
             {
-                Debug.LogError($"[Reload Avatar Hook] OSC Send Error: {e.Message}");
+                Debug.LogError($"[Reload Uploaded Avatar] OSC Send Error: {e.Message}");
             }
         }
     }
