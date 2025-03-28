@@ -2,9 +2,10 @@ using UnityEditor;
 using UnityEngine;
 using VRC.Core; // For PipelineManager
 // Namespace should ideally match the assembly name for clarity
-using VRC.ReloadAvatarHook.Editor; // For OscSender and AvatarUploadHookCore
+using VRC.SDKBase;
+using ReloadAvatarHook;
 
-namespace VRC.ReloadAvatarHook.Editor // Keep namespace consistent for now
+namespace ReloadAvatarHook
 {
     public static class ManualActions
     {
@@ -12,7 +13,7 @@ namespace VRC.ReloadAvatarHook.Editor // Keep namespace consistent for now
         /// Manually sends an OSC message using the blueprint ID of the selected avatar.
         /// This now triggers the full reload sequence (temp -> delay -> final).
         /// </summary>
-        [MenuItem("VRChat SDK/Reload Avatar Hook/Manual Test Send OSC")]
+        [MenuItem("Tools/Reload Avatar Hook/Manual Test Send OSC")]
         static void ManualTestSend()
         {
             GameObject selectedObject = Selection.activeGameObject;
@@ -50,7 +51,7 @@ namespace VRC.ReloadAvatarHook.Editor // Keep namespace consistent for now
         /// <summary>
         /// Manually triggers the retry mechanism for initializing the SDK event hook.
         /// </summary>
-        [MenuItem("VRChat SDK/Reload Avatar Hook/Retry Hook Initialization")]
+        [MenuItem("Tools/Reload Avatar Hook/Retry Hook Initialization")]
         static void ManualRetryInit()
         {
             AvatarUploadHookCore.ManualRetryInit();

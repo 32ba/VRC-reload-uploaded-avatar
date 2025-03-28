@@ -5,7 +5,7 @@ using System.Net.Sockets;
 using System.Text;
 using System.Collections.Generic; // For List<byte>
 
-namespace VRC.ReloadAvatarHook.Editor // Keep namespace consistent for now
+namespace ReloadAvatarHook
 {
     public static class OscSender
     {

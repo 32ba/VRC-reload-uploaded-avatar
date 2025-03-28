@@ -1,7 +1,7 @@
 using UnityEditor;
 using UnityEngine;
 
-namespace VRC.ReloadAvatarHook.Editor // Keep namespace consistent for now
+namespace ReloadAvatarHook
 {
     public static class ReloadHookSettings
     {

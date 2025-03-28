@@ -1,7 +1,8 @@
 using UnityEditor;
 using UnityEngine;
+using ReloadAvatarHook;
 
-namespace VRC.ReloadAvatarHook.Editor // Keep namespace consistent for now
+namespace ReloadAvatarHook
 {
     public class ReloadHookSettingsWindow : EditorWindow
     {
@@ -10,7 +11,7 @@ namespace VRC.ReloadAvatarHook.Editor // Keep namespace consistent for now
         private int _reloadDelayMs;
         private string _tempAvatarId;
 
-        [MenuItem("VRChat SDK/Reload Avatar Hook/Settings")]
+        [MenuItem("Tools/Reload Avatar Hook/Settings")]
         public static void ShowWindow()
         {
             // Get existing open window or if none, make a new one:

@@ -1,15 +1,14 @@
 using UnityEditor;
 using UnityEngine;
 using VRC.Core;
+using VRC.SDKBase.Editor;
+using VRC.SDKBase.Editor.Api;
 using System;
 using System.Reflection;
 using System.Linq;
 using System.Threading.Tasks; // Added for Task.Delay
-// Namespace should ideally match the assembly name for clarity, but keep existing for now
-// or update across all files if changing asmdef name significantly.
-using VRC.ReloadAvatarHook.Editor; // For OscSender
 
-namespace VRC.ReloadAvatarHook.Editor // Keep namespace consistent for now
+namespace ReloadAvatarHook
 {
     [InitializeOnLoad]
     public static class AvatarUploadHookCore
@@ -18,130 +17,21 @@ namespace VRC.ReloadAvatarHook.Editor // Keep namespace consistent for now
         private static EventInfo _uploadSuccessEvent;
         private static FieldInfo _selectedAvatarField;
 
-        private static int _retryCount = 0;
-        private const int MAX_RETRIES = 10;
-        private const int RETRY_DELAY_MS = 1000; // Delay for hook initialization retry
 
-        static AvatarUploadHookCore()
+        [InitializeOnLoadMethod]
+        public static void RegisterSDKCallback()
         {
-            EditorApplication.delayCall += InitializeHookWithRetry;
+            VRCSdkControlPanel.OnSdkPanelEnable += AddBuildHook;
         }
 
-        static void InitializeHookWithRetry()
+        private static void AddBuildHook(object sender, EventArgs e)
         {
-            if (TryInitializeHook())
+            if (VRCSdkControlPanel.TryGetBuilder<IVRCSdkBuilderApi>(out var builder))
             {
-                Debug.Log("[VRC Reload Avatar Hook] Successfully initialized hook.");
-            }
-            else if (_retryCount < MAX_RETRIES)
-            {
-                _retryCount++;
-                Debug.Log($"[VRC Reload Avatar Hook] Initialization failed, retrying in {RETRY_DELAY_MS}ms (Attempt {_retryCount}/{MAX_RETRIES})...");
-                EditorApplication.delayCall += () => {
-                     System.Threading.Tasks.Task.Delay(RETRY_DELAY_MS).ContinueWith(_ => EditorApplication.delayCall += InitializeHookWithRetry);
-                };
-            }
-            else
-            {
-                Debug.LogError("[VRC Reload Avatar Hook] Failed to initialize hook after multiple retries. Automatic OSC sending might not work. Use 'VRChat SDK/Reload Avatar Hook/Retry Hook Initialization' to try again.");
+                builder.OnSdkUploadSuccess += OnUploadSuccess;
             }
         }
-
-        static bool TryInitializeHook()
-        {
-             Debug.Log("[VRC Reload Avatar Hook] Attempting to initialize hook...");
-            try
-            {
-                // Find VRCSdkControlPanel type
-                Assembly sdkBaseEditorAssembly = AppDomain.CurrentDomain.GetAssemblies().FirstOrDefault(a => a.GetName().Name == "VRC.SDKBase.Editor");
-                if (sdkBaseEditorAssembly == null) {
-                     Debug.LogError("[VRC Reload Avatar Hook] VRC.SDKBase.Editor assembly not found.");
-                     return false;
-                }
-                Type panelType = sdkBaseEditorAssembly.GetType("VRC.Editor.VRCSdkControlPanel");
-                if (panelType == null)
-                {
-                    Debug.LogError("[VRC Reload Avatar Hook] Could not find VRCSdkControlPanel type.");
-                    return false;
-                }
-
-                // Get SDK Control Panel window instance
-                var panelWindow = EditorWindow.GetWindow(panelType, false, "VRChat SDK", false);
-                if (panelWindow == null)
-                {
-                    Debug.LogWarning("[VRC Reload Avatar Hook] VRCSdkControlPanel window is not open. Retrying...");
-                    return false; // Window not open, retry might succeed later
-                }
-
-                // Find the avatar builder field instance
-                FieldInfo builderField = panelType.GetField("_avatarBuilder", BindingFlags.Instance | BindingFlags.NonPublic)
-                                      ?? panelType.GetField("m_AvatarBuilder", BindingFlags.Instance | BindingFlags.NonPublic); // Try alternative name
-                if (builderField == null)
-                {
-                    Debug.LogError("[VRC Reload Avatar Hook] Could not find the avatar builder field in VRCSdkControlPanel. SDK structure might have changed.");
-                    return false;
-                }
-                _builderInstance = builderField.GetValue(panelWindow);
-                if (_builderInstance == null)
-                {
-                    Debug.LogWarning("[VRC Reload Avatar Hook] Avatar builder instance is null (panel might be initializing). Retrying...");
-                    return false; // Builder might not be ready yet
-                }
-
-                // Find VRCSdkControlPanelAvatarBuilder type
-                Assembly sdk3aEditorAssembly = AppDomain.CurrentDomain.GetAssemblies().FirstOrDefault(a => a.GetName().Name == "VRC.SDK3A.Editor");
-                 if (sdk3aEditorAssembly == null) {
-                     Debug.LogError("[VRC Reload Avatar Hook] VRC.SDK3A.Editor assembly not found.");
-                     return false;
-                }
-                Type builderType = sdk3aEditorAssembly.GetType("VRC.SDK3A.Editor.VRCSdkControlPanelAvatarBuilder");
-                if (builderType == null) {
-                     Debug.LogError("[VRC Reload Avatar Hook] Could not find VRCSdkControlPanelAvatarBuilder type.");
-                     return false;
-                }
-
-                // Verify instance type
-                if (!_builderInstance.GetType().IsSubclassOf(builderType) && _builderInstance.GetType() != builderType)
-                {
-                     Debug.LogError($"[VRC Reload Avatar Hook] Builder instance type mismatch. Expected {builderType} or subclass, Got {_builderInstance.GetType()}.");
-                     return false;
-                }
-
-                // Get OnSdkUploadSuccess event
-                _uploadSuccessEvent = builderType.GetEvent("OnSdkUploadSuccess", BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic);
-                if (_uploadSuccessEvent == null)
-                {
-                    Debug.LogError("[VRC Reload Avatar Hook] Could not find OnSdkUploadSuccess event on the builder instance.");
-                    return false;
-                }
-
-                // Get _selectedAvatar field (static private)
-                _selectedAvatarField = builderType.GetField("_selectedAvatar", BindingFlags.Static | BindingFlags.NonPublic);
-                 if (_selectedAvatarField == null)
-                {
-                    Debug.LogWarning("[VRC Reload Avatar Hook] Could not find _selectedAvatar field. Will try to use Selection.activeGameObject as fallback in handler.");
-                }
-
-                // Create and add event handler
-                Delegate handler = Delegate.CreateDelegate(_uploadSuccessEvent.EventHandlerType,
-                    typeof(AvatarUploadHookCore).GetMethod(nameof(OnUploadSuccessReflected), BindingFlags.Static | BindingFlags.NonPublic));
-
-                // Remove existing handler first to prevent duplicates
-                try { _uploadSuccessEvent.RemoveEventHandler(_builderInstance, handler); } catch {}
-
-                _uploadSuccessEvent.AddEventHandler(_builderInstance, handler);
-                _retryCount = 0; // Reset retry count on success
-                return true; // Success
-            }
-            catch (Exception e)
-            {
-                Debug.LogError($"[VRC Reload Avatar Hook] Error during reflection setup: {e}");
-                return false;
-            }
-        }
-
-
-        static void OnUploadSuccessReflected(object sender, string apiAvatarId)
+        public static void OnUploadSuccessReflected(object sender, string apiAvatarId)
         {
             Debug.Log($"[VRC Reload Avatar Hook] OnUploadSuccessReflected triggered for API Avatar ID: {apiAvatarId}");
 
@@ -195,7 +85,7 @@ namespace VRC.ReloadAvatarHook.Editor // Keep namespace consistent for now
             SendReloadSequenceAsync(blueprintId);
         }
 
-        private static async void SendReloadSequenceAsync(string finalBlueprintId)
+        static async void SendReloadSequenceAsync(string finalBlueprintId)
         {
             if (string.IsNullOrEmpty(finalBlueprintId))
             {
@@ -229,12 +119,6 @@ namespace VRC.ReloadAvatarHook.Editor // Keep namespace consistent for now
             OscSender.SendOscAvatarChangeMessage(finalBlueprintId);
 
              Debug.Log("[VRC Reload Avatar Hook] Reload sequence completed.");
-        }
-
-        public static void ManualRetryInit()
-        {
-            _retryCount = 0;
-            InitializeHookWithRetry();
         }
     }
 }

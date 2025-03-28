@@ -1,5 +1,5 @@
 {
-    "name": "net.32ba.reload-avatar-hook.Editor",
+    "name": "ReloadAvatarHook.Editor",
     "references": [],
     "includePlatforms": [
         "Editor"
