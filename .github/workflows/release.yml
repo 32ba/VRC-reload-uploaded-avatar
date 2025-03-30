@@ -38,6 +38,14 @@ jobs:
       - name: Checkout
         uses: actions/checkout@3df4ab11eba7bda6032a0b82a6bb43b11571feac
 
+      - name: Generate token
+        id: generate_token
+        uses: actions/create-github-app-token@v1
+        with:
+          app-id: ${{ secrets.GH_APP_ID }}
+          private-key: ${{ secrets.GH_APP_PRIVATE_KEY }}
+          owner: ${{ github.repository_owner }}
+
       # Get the Package version based on the package.json file
       - name: Get Version
         id: version
@@ -85,3 +93,12 @@ jobs:
             ${{ env.unityPackage }}
             package.json
           tag_name: ${{ env.version }}
+
+      # Update listing using the GitHub API
+      - name: Update VPM repository
+        run: |
+          curl -X POST \
+            -H "Authorization: Bearer ${{ steps.generate_token.outputs.token }}" \
+            -H "Accept: application/vnd.github.v3+json" \
+            https://api.github.com/repos/${{ github.repository_owner }}/vpm.32ba.net/dispatches \
+            -d '{"event_type": "update-listing", "client_payload": {}'
