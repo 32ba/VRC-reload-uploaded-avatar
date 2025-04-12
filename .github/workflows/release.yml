@@ -56,15 +56,15 @@ jobs:
     
       # Configure the Environment Variables needed for releasing the Package
       - name: Set Environment Variables
+        id: set_env
         run: |
-          echo "zipFile=${{ vars.PACKAGE_NAME }}-${{ steps.version.outputs.value }}".zip >> $GITHUB_ENV
-          echo "unityPackage=${{ vars.PACKAGE_NAME }}-${{ steps.version.outputs.value }}.unitypackage" >> $GITHUB_ENV
-          echo "version=${{ steps.version.outputs.value }}" >> $GITHUB_ENV
-
+          echo "zipFile=${{ vars.PACKAGE_NAME }}-${{ steps.version.outputs.value }}".zip >> $GITHUB_OUTPUT
+          echo "unityPackage=${{ vars.PACKAGE_NAME }}-${{ steps.version.outputs.value }}.unitypackage" >> $GITHUB_OUTPUT
+          
       # Zip the Package for release
       - name: Create Package Zip
         working-directory: "${{ env.packagePath }}"
-        run: zip -r "${{ github.workspace }}/${{ env.zipFile }}" .
+        run: zip -r "${{ github.workspace }}/${{ steps.set_env.outputs.zipFile }}" . -x '.*' '*/.*'
       
       # Build a list of .meta files for future use
       - name: Track Package Meta Files
@@ -74,7 +74,7 @@ jobs:
       - name: Create UnityPackage
         uses: pCYSl5EDgo/create-unitypackage@v1.2.3
         with:
-          package-path: ${{ env.unityPackage }}
+          package-path: ${{ steps.set_env.outputs.unityPackage }}
           include-files: metaList
       
       # Make a release tag of the version from the package.json file 
@@ -82,17 +82,17 @@ jobs:
         id: tag_version
         uses: rickstaa/action-create-tag@88dbf7ff6fe2405f8e8f6c6fdfd78829bc631f83
         with:
-          tag: "${{ env.version }}"
+          tag: "${{ steps.version.outputs.value }}"
       
       # Publish the Release to GitHub
       - name: Make Release
         uses: softprops/action-gh-release@de2c0eb89ae2a093876385947365aca7b0e5f844
         with:
           files: |
-            ${{ env.zipFile }}
-            ${{ env.unityPackage }}
+            ${{ steps.set_env.outputs.zipFile }}
+            ${{ steps.set_env.outputs.unityPackage }}
             package.json
-          tag_name: ${{ env.version }}
+          tag_name: ${{ steps.version.outputs.value }}
 
       # Update listing using the GitHub API
       - name: Update VPM repository
@@ -101,4 +101,4 @@ jobs:
             -H "Authorization: Bearer ${{ steps.generate_token.outputs.token }}" \
             -H "Accept: application/vnd.github.v3+json" \
             https://api.github.com/repos/${{ github.repository_owner }}/vpm.32ba.net/dispatches \
-            -d '{"event_type": "update-listing", "client_payload": {}'
+            -d '{"event_type": "update-listing", "client_payload": {}}'
